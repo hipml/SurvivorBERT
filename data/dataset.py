@@ -111,5 +111,5 @@ if __name__ == "__main__":
     print(dataset)
     
     # upload to Hub
-    repo_name = "hipml/survivor" 
+    repo_name = "hipml/survivor-subtitles" 
     upload_to_hub(dataset, repo_name, private=False)
