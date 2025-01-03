@@ -6,7 +6,7 @@ A project to create a comprehensive dataset of Survivor TV show subtitles and tr
 
 - Downloaded subtitles for 22/47 seasons from OpenSubtitles
 - Working through API rate limits to complete the dataset
-- Raw subtitle data being converted to HuggingFace dataset format
+- Raw subtitle data being converted to [Hugging Face Dataset](https://huggingface.co/datasets/hipml/survivor-subtitles) format
 
 ## Planned Features
 
@@ -49,10 +49,12 @@ Attribution: You must give appropriate credit, provide a link to the license, an
 ## Notes
 
 ### Missing
-Season 17, E {1, 5, 6}
-Season 18, E {4}
-Season 19, E {6}
-Season 20, E {11}
-Season 21, E {3, 4, 5, 10, 11, 12}
-Season 22, E {5, 6}
-Season 24, E {4, 5}
+- Season 17, E {1, 5, 6}
+- Season 18, E {4}
+- Season 19, E {6}
+- Season 20, E {11}
+- Season 21, E {3, 4, 5, 10, 11, 12}
+- Season 22, E {5, 6}
+- Season 24, E {4, 5}
+- Season 25, E {10}
+
