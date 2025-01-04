@@ -56,5 +56,9 @@ Attribution: You must give appropriate credit, provide a link to the license, an
 - Season 21, E {3, 4, 5, 10, 11, 12}
 - Season 22, E {5, 6}
 - Season 24, E {4, 5}
-- Season 25, E {10}
+- Season 25, E {10+}
+- Season 27, E {8+}
+- Season 35, E {10+}
+
+
 
