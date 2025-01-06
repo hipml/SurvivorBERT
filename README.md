@@ -48,18 +48,5 @@ Attribution: You must give appropriate credit, provide a link to the license, an
 
 ## Notes
 
-### Missing
-- Season 17, E {1, 5, 6}
-- Season 18, E {4}
-- Season 19, E {6}
-- Season 20, E {11}
-- Season 21, E {3, 4, 5, 10, 11, 12}
-- Season 22, E {5, 6}
-- Season 24, E {4, 5}
-- Season 25, E {10+}
-- Season 27, E {8+}
-- Season 35, E {10+}
-- Season 37, E {6+}
-- Season 44, E {11+}
 
 
