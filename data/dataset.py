@@ -5,6 +5,7 @@ import json
 from datasets import Dataset
 from huggingface_hub import login
 from tqdm import tqdm
+from dotenv import load_dotenv
 
 def parse_time(time_str):
     """
@@ -96,7 +97,9 @@ def process_all_srt_files(directory="./subtitles"):
     return dataset
 
 def upload_to_hub(dataset, repo_name, private=True):
-    login()
+    load_dotenv()
+    token = os.getenv('HF_TOKEN')
+    login(token)
     
     dataset.push_to_hub(
         repo_name,
