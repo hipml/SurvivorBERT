@@ -4,16 +4,16 @@ A project to create a comprehensive dataset of Survivor TV show subtitles and tr
 
 ## Current Status
 
-- Downloaded subtitles for 22/47 seasons from OpenSubtitles
-- Working through API rate limits to complete the dataset
-- Raw subtitle data being converted to [Hugging Face Dataset](https://huggingface.co/datasets/hipml/survivor-subtitles) format
+- Downloaded subtitles for 47/47 seasons from OpenSubtitles
+- Raw subtitle data converted to [Hugging Face Dataset](https://huggingface.co/datasets/hipml/survivor-subtitles) format
+- Next: subtitle consolidation 
 
 ## Planned Features
 
-- Complete subtitle collection for all 47 seasons
-- Text preprocessing and cleaning
+✅ Complete subtitle collection for all 47 seasons
+✅ Publishing dataset on HuggingFace Hub
+- Text preprocessing, cleaning, and consolidation
 - Conversion to structured dialogue format
-- Publishing dataset on HuggingFace Hub
 
 ## Potential Applications
 
@@ -24,10 +24,6 @@ A project to create a comprehensive dataset of Survivor TV show subtitles and tr
 - Analyzing narrative structures and dramatic patterns
 - Studying contestant interaction patterns and social dynamics
 - Sentiment analysis of tribal council discussions
-
-## Setup
-
-Coming soon
 
 ## Contributing
 
@@ -45,8 +41,4 @@ Adapt: Remix, transform, and build upon the material for any purpose
 Under the following terms:  
 
 Attribution: You must give appropriate credit, provide a link to the license, and indicate if changes were made.
-
-## Notes
-
-
 
