@@ -114,6 +114,47 @@ def download_subtitle(subtitles, imdb_id, season, episode, output_path):
         print(f"Error downloading subtitle: {e}")
         return False
 
+def generate_failed_episodes():
+    """
+    Generate list of specific failed episodes
+    """
+    failed_episodes = []
+    
+    # Season 17
+    failed_episodes.extend([f"S17E{ep:02d}" for ep in [1, 5, 6]])
+    
+    # Season 18
+    failed_episodes.append("S18E04")
+    
+    # Season 19
+    failed_episodes.append("S19E06")
+    
+    # Season 20
+    failed_episodes.append("S20E11")
+    
+    # Season 21
+    failed_episodes.extend([f"S21E{ep:02d}" for ep in [3, 4, 5, 10, 11, 12]])
+    
+    # Season 22
+    failed_episodes.extend([f"S22E{ep:02d}" for ep in [5, 6]])
+    
+    # Season 24
+    failed_episodes.extend([f"S24E{ep:02d}" for ep in [4, 5]])
+    
+    # Seasons with missing episodes from X onwards
+    season_ranges = {
+        25: (10, 14),  # Episodes 10+
+        27: (8, 14),   # Episodes 8+
+        35: (10, 14),  # Episodes 10+
+        37: (6, 14),   # Episodes 6+
+        44: (11, 14)   # Episodes 11+
+    }
+    
+    for season, (start, end) in season_ranges.items():
+        failed_episodes.extend([f"S{season:02d}E{ep:02d}" for ep in range(start, end + 1)])
+    
+    return failed_episodes
+
 def main():
     credentials = load_credentials()
     subtitles = OpenSubtitles(credentials['app_name'], credentials['api_key'])
@@ -126,7 +167,8 @@ def main():
     
     os.makedirs('subtitles', exist_ok=True)
     mappings = load_imdb_mappings('data/imdbid_map.txt')
-    episodes = generate_episode_list()
+    episodes = generate_failed_episodes()
+    # episodes = generate_episode_list()
     
     total = len(episodes)
     successful = 0
