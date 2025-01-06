@@ -10,10 +10,10 @@ A project to create a comprehensive dataset of Survivor TV show subtitles and tr
 
 ## Planned Features
 
-✅ Complete subtitle collection for all 47 seasons
-✅ Publishing dataset on HuggingFace Hub
-- Text preprocessing, cleaning, and consolidation
-- Conversion to structured dialogue format
+✅ Complete subtitle collection for all 47 seasons  
+✅ Publishing dataset on HuggingFace Hub  
+- Text preprocessing, cleaning, and consolidation  
+- Conversion to structured dialogue format  
 
 ## Potential Applications
 
