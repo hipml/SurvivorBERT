@@ -1,138 +1,130 @@
-from datasets import load_dataset, Dataset, DatasetDict
-from huggingface_hub import login
-from dotenv import load_dotenv
-
+from datasets import load_dataset, Dataset
 import pandas as pd
 import re
-import os
+from tqdm import tqdm
+from huggingface_hub import HfApi
 
-def normalize_speaker(speaker):
-    if not speaker:
-        return None
+def get_continuation_patterns():
+    """Return patterns that suggest text continuation."""
+    return [
+        r'^(and|or|but|nor|for|yet|so|because|while|although|unless|if|than|that|who|which|where)\b',
+        r'^[a-z]',
+        r'^\s*[,;]\s*',
+        r'[,;]\s*$',
+        r'\b(to|in|on|at|by|for|with|about|into|through|beyond|over|under)\s*$',
+        r'\b(the|a|an|my|your|his|her|their|our|its)\s*$',
+    ]
+
+def should_combine_subtitles(current_text, next_text, current_end_time, next_start_time, max_time_gap=1.0):
+    """Determine if two subtitle entries should be combined."""
+    if not current_text or not next_text:
+        return False
+
+    current_text = current_text.strip()
+    next_text = next_text.strip()
+    
+    ends_with_terminal = bool(re.search(r'[.!?][\'")\]]?\s*$', current_text))
+    if ends_with_terminal:
+        return False
+    
+    time_gap = next_start_time - current_end_time
+    if time_gap > max_time_gap:
+        return False
+    
+    patterns = get_continuation_patterns()
+    
+    for pattern in patterns:
+        if re.search(pattern, next_text, re.IGNORECASE):
+            return True
+    
+    incomplete_patterns = [
+        r'\b(and|or|but|if|while|because|that)\s*$',
+        r'\b(in|on|at|by|for|with|to|from)\s*$',
+        r'[,;]\s*$',
+        r'\b(the|a|an)\s*$',
+    ]
+    
+    for pattern in incomplete_patterns:
+        if re.search(pattern, current_text, re.IGNORECASE):
+            return True
+    
+    # Check for quotes
+    if current_text.count('"') % 2 == 1 or current_text.count('"') % 2 == 1:
+        return True
         
-    # Special case for Probst
-    if speaker.upper() == 'PROBST':
-        return 'Jeff'
+    # Check for parentheses/brackets balance
+    if (current_text.count('(') > current_text.count(')') or 
+        current_text.count('[') > current_text.count(']')):
+        return True
     
-    # Convert to proper case
-    return ' '.join(word.capitalize() for word in speaker.lower().split())
+    return False
 
-def normalize_text(text):
-    # If text is all caps, convert to title case first, then proper case
-    if text.isupper():
-        text = text.title()
+def combine_subtitle_fragments(df, max_time_gap=1.0):
+    """Combine fragmented subtitle entries into complete sentences."""
+    df = df.sort_values(['episode', 'start_time'])
     
-    # Handle dialogue with dashes
-    if text.startswith('-'):
-        text = text.replace('-', '').strip()
+    combined_entries = []
+    current_entry = None
     
-    # Special handling for show name
-    text = text.replace('"SURVIVOR"', 'Survivor')
-    text = text.replace('"Survivor"', 'Survivor')
-    
-    return text.strip()
-
-def extract_speaker(text):
-    # Remove ">>" markers
-    text = text.replace('>>', '').strip()
-    
-    # Handle parenthetical notes separately
-    parenthetical_match = re.search(r'\((.*?)\)', text)
-    parenthetical = parenthetical_match.group(0) if parenthetical_match else ''
-    text = text.replace(parenthetical, '').strip()
-    
-    # Match pattern "Speaker: text" - handles both upper and lower case names
-    match = re.match(r'^([A-Za-z][A-Za-z\s&]+?):\s*(.*)', text.strip())
-    if match:
-        speaker = normalize_speaker(match.group(1))
-        content = normalize_text(match.group(2))
-        return speaker, content
-    return None, normalize_text(text)
-
-
-def merge_subtitles(df):
-    merged_entries = []
-    current_sentence = {
-        'episode': None,
-        'speaker': None,
-        'text': [],
-        'start_time': None,
-        'end_time': None,
-        'subtitle_number': None
-    }
-    
-    def is_sentence_end(text):
-        return bool(re.search(r'[.!?]$', text.strip()))
-    
-    def clean_text(text):
-        # Remove ">>" markers and clean up spaces
-        text = re.sub(r'\s+', ' ', text.replace('>>', '').strip())
-        return normalize_text(text)  # Add normalization here
-    
-    for idx, row in df.iterrows():
-        text = clean_text(row['text'])  # Now calls normalize_text
-        speaker, content = extract_speaker(text)
-        
-        if current_sentence['text'] == [] or speaker:
-            if current_sentence['text']:
-                merged_entries.append({
-                    'episode': current_sentence['episode'],
-                    'speaker': current_sentence['speaker'],
-                    'text': clean_text(' '.join(current_sentence['text'])),  # Add normalization here
-                    'start_time': current_sentence['start_time'],
-                    'end_time': current_sentence['end_time'],
-                    'original_subtitles': current_sentence['subtitle_number']
-                })
+    for _, row in tqdm(df.iterrows(), total=len(df), desc="Combining subtitles"):
+        if current_entry is None:
+            current_entry = dict(row)
+            continue
             
-            current_sentence = {
-                'episode': row['episode'],
-                'speaker': speaker,
-                'text': [content],
-                'start_time': row['start_time'],
-                'end_time': row['end_time'],
-                'subtitle_number': [row['subtitle_number']]
-            }
+        if current_entry['episode'] != row['episode']:
+            combined_entries.append(current_entry)
+            current_entry = dict(row)
+            continue
+            
+        if should_combine_subtitles(current_entry['text'], row['text'], current_entry['end_time'], row['start_time'], max_time_gap):
+            current_entry['text'] = f"{current_entry['text'].strip()} {row['text'].strip()}"
+            current_entry['end_time'] = row['end_time']
+            current_entry['duration'] = current_entry['end_time'] - current_entry['start_time']
         else:
-            current_sentence['text'].append(content)
-            current_sentence['end_time'] = row['end_time']
-            current_sentence['subtitle_number'].append(row['subtitle_number'])
-        
-        if is_sentence_end(content):
-            merged_entries.append({
-                'episode': current_sentence['episode'],
-                'speaker': current_sentence['speaker'],
-                'text': clean_text(' '.join(current_sentence['text'])),  # Add normalization here
-                'start_time': current_sentence['start_time'],
-                'end_time': current_sentence['end_time'],
-                'original_subtitles': current_sentence['subtitle_number']
-            })
-            current_sentence = {'text': [], 'subtitle_number': [], 'speaker': None}
-            
-    return pd.DataFrame(merged_entries)
+            combined_entries.append(current_entry)
+            current_entry = dict(row)
+    
+    if current_entry is not None:
+        combined_entries.append(current_entry)
+    
+    result_df = pd.DataFrame(combined_entries)
+    
+    result_df['subtitle_number'] = result_df.groupby('episode').cumcount() + 1
+    
+    return result_df
 
-load_dotenv()
-token = os.getenv('HF_TOKEN')
-login(token)
+def main():
+    print("Loading dataset...")
+    dataset = load_dataset("hipml/survivor-subtitles", use_auth_token=False)
+    print("Dataset loaded!")
 
-dataset = load_dataset("hipml/survivor-subtitles")
-df = pd.DataFrame(dataset['train'])
-merged_df = merge_subtitles(df)
-
-# print("\n=== Sample Processed Entries ===\n")
-# samples = merged_df.sample(n=10)
-# for _, row in samples.iterrows():
-#     print(f"Episode: {row['episode']}")
-#     print(f"Speaker: {row['speaker'] or 'None'}")
-#     print(f"Text: {row['text']}")
-#     print("---")
-
-processed_dataset = Dataset.from_pandas(merged_df)
-
-dataset_dict = DatasetDict({
-    "train": processed_dataset
-})
-
-dataset_dict.push_to_hub(
-    "hipml/survivor-subtitles-processed",
-    private=False
-)
+    print("Converting to DataFrame...")
+    df = pd.DataFrame(dataset['train'])
+    print(f"Original number of entries: {len(df)}")
+    
+    processed_df = combine_subtitle_fragments(df)
+    print(f"Number of entries after combining: {len(processed_df)}")
+    
+    print("Saving local backup...")
+    processed_df.to_csv("survivor_subtitles_cleaned.csv", index=False)
+    
+    print("Converting to Hugging Face dataset format...")
+    cleaned_dataset = Dataset.from_pandas(processed_df)
+    
+    print("Uploading to Hugging Face Hub...")
+    cleaned_dataset.push_to_hub(
+        "hipml/survivor-subtitles-cleaned",
+        private=False,
+        commit_message="Add cleaned version of Survivor subtitles with combined sentence fragments"
+    )
+    
+    print("\nProcessing complete!")
+    print("Dataset has been uploaded to: https://huggingface.co/datasets/hipml/survivor-subtitles-cleaned")
+    
+    print("\nStatistics:")
+    print(f"Original number of subtitles: {len(df)}")
+    print(f"Number of subtitles after combining: {len(processed_df)}")
+    print(f"Reduction: {((len(df) - len(processed_df)) / len(df) * 100):.2f}%")
+    
+if __name__ == "__main__":
+    main()
