@@ -1,3 +1,5 @@
 opensubtitlescom
-selenium
 python-dotenv
+torch
+datasets
+transformers
