@@ -71,30 +71,36 @@ def process_all_srt_files(directory="./subtitles"):
     """
     Process all SRT files in given directory
     """
-
     all_dialogues = []
     srt_files = list(Path(directory).glob("S[0-9][0-9]E[0-9][0-9].srt"))
     
-    for srt_file in tqdm(srt_files, desc="Processing SRT files"):
+    print(f"Starting to process {len(srt_files)} files...")
+    
+    for srt_file in tqdm(sorted(srt_files), desc="Processing SRT files"):
         dialogues = parse_srt_file(srt_file)
         all_dialogues.extend(dialogues)
     
-    # convert to HuggingFace Dataset
-    dataset = Dataset.from_list(all_dialogues)
+    print(f"\nTotal dialogues collected: {len(all_dialogues)}")
+    print(f"Sample of first dialogue: {all_dialogues[0]}")
+    print(f"Sample of last dialogue: {all_dialogues[-1]}")
     
-    # save as Arrow dataset
-    dataset.save_to_disk("subtitle_dataset")
-    
-    # also save a sample as JSON for inspection
-    sample_data = all_dialogues[:100]
-    with open("sample_data.json", "w", encoding="utf-8") as f:
-        json.dump(sample_data, f, indent=2, ensure_ascii=False)
-    
-    print(f"Processed {len(srt_files)} files with {len(all_dialogues)} dialogue entries")
-    print(f"Dataset saved to 'subtitle_dataset' directory")
-    print(f"Sample data saved to 'sample_data.json'")
+    print("\nCreating HuggingFace Dataset...")
+    try:
+        dataset = Dataset.from_list(all_dialogues)
+        print("Dataset created successfully!")
+        print(f"Dataset size: {len(dataset)}")
+        
+        try:
+            dataset.save_to_disk("subtitle_dataset")
+        except Exception as e:
+            print(f"Error saving dataset: {str(e)}")
+            
+    except Exception as e:
+        print(f"Error creating dataset: {str(e)}")
+        return None
     
     return dataset
+
 
 def upload_to_hub(dataset, repo_name, private=True):
     load_dotenv()
