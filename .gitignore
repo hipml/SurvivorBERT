@@ -1,6 +1,7 @@
 .env
 .opensubtitles_login
 subtitle_dataset/
+*.csv
 
 # Emacs
 *~
