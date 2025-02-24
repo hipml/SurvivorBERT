@@ -2,6 +2,7 @@
 .opensubtitles_login
 subtitle_dataset/
 *.csv
+__pycache__
 
 # Emacs
 *~
